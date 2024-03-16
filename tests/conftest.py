@@ -11,7 +11,7 @@ from app.database.database import Base
 from app.main import app
 from app.dependencies import get_async_session
 from app.models.models import RefferalCode, Users, refferals
-from app.models.queries import create_meta
+from app.models.queries import startapp
 from app.utils import create_access_token, get_password_hash
 
 DATABASE_URL = "sqlite+aiosqlite://"
@@ -30,7 +30,7 @@ app.dependency_overrides[get_async_session] = override_get_async_session
 
 
 async def setUp():
-    await create_meta(engine, Base)
+    await startapp(engine, Base)
 
     users_to_insert = [
         {
@@ -57,7 +57,7 @@ async def setUp():
         {"user_id": 1, "ref_id": 3},
     ]
     ref_code_token = create_access_token(
-        {"email": "email1@gmail.com"}, timedelta(minutes=30)
+        {"email": "email1@gmail.com"}, timedelta(seconds=5)
     )
     async with _async_session() as session:
         async with session.begin():

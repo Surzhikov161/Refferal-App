@@ -9,7 +9,7 @@ from app.dependencies import get_async_session
 from app.models.queries import (
     add_refferal_code_to_user,
     delete_ref_code,
-    get_user_by_email,
+    get_refferal_code,
     get_user_by_username,
     get_user_refferals,
 )
@@ -141,20 +141,16 @@ async def get_ref_code_by_email(
         async_sessionmaker[AsyncSession], Depends(get_async_session)
     ],
 ):
-    user = await get_user_by_email(email, async_session)
-    if user:
+    refferal_code = await get_refferal_code(email, async_session)
+    if refferal_code:
         return JSONResponse(
             status_code=200,
-            content={
-                "refferal_code": (
-                    user.refferal_code.code if user.refferal_code else None
-                ),
-            },
+            content={"refferal_code": refferal_code},
         )
     return JSONResponse(
         status_code=404,
         content={
             "result": False,
-            "msg": "User not found",
+            "msg": "User not found or user doesn't have refferal code",
         },
     )

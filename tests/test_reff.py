@@ -1,3 +1,4 @@
+import time
 import pytest
 
 from app.models.models import Users
@@ -18,7 +19,7 @@ def test_get_code_by_email(client):
     assert res.json()["refferal_code"]
 
     res_fail = client.get("/api/refferal/email/email2@gmail.com")
-    assert res_fail.json()["refferal_code"] is None
+    assert res_fail.status_code == 404
 
 
 @pytest.mark.asyncio
@@ -56,6 +57,16 @@ async def test_register_with_ref(client, async_session):
         assert new_user
         head_user = await session.get(Users, 1)
         assert len(head_user.ref_users) == 3
+
+    time.sleep(5)
+    fail_json = {
+        "username": "test6",
+        "email": "testemail6@gmail.com",
+        "password": "pass",
+        "refferal_code": ref_code,
+    }
+    fail_res = client.post("api/accounts/register", json=fail_json)
+    assert fail_res.status_code == 404
 
 
 def test_login(client):

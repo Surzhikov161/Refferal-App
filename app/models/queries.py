@@ -1,10 +1,14 @@
+import time
 from typing import Any, Optional
 
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 from jose import JWTError, jwt
+from redis import asyncio as aioredis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.future import select
-from sqlalchemy.orm import load_only, noload, subqueryload
+from sqlalchemy.orm import noload
 
 from app.config import ALGORITHM, SECRET_KEY
 from app.models.models import RefferalCode, Users, refferals
@@ -18,7 +22,7 @@ async def is_ref_valid(
         payload = jwt.decode(ref_code, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("email", "")
         user = await get_user_by_email(email, async_session)
-        if user:
+        if user and user.refferal_code:
             return user
     except JWTError:
         return
@@ -92,12 +96,15 @@ async def add_user_and_ref(
             await session.execute(statement)
             await session.commit()
         return new_user
-    except Exception as e:
-        print(str(e))
+    except Exception:
         return
 
 
-async def create_meta(engine, Base):
+async def startapp(engine, Base):
+    redis = aioredis.from_url(
+        "redis://localhost", encoding="utf8", decode_responses=True
+    )
+    FastAPICache.init(RedisBackend(redis), prefix="fastapi-cache")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -153,6 +160,22 @@ async def get_user_by_email(
 
 
 @cache(expire=60)
+async def get_refferal_code(
+    email: str,
+    async_session: async_sessionmaker[AsyncSession],
+):
+    async with async_session() as session:
+        res = await session.execute(
+            select(Users)
+            .filter(Users.email.in_([email]))
+            .options(noload(Users.ref_users))
+        )
+        await session.commit()
+        user: Optional[Users] = res.scalars().one_or_none()
+        if user and user.refferal_code:
+            return user.refferal_code.code
+
+
 async def get_user_refferals(
     id: int,
     async_session: async_sessionmaker[AsyncSession],

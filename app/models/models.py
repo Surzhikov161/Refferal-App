@@ -1,7 +1,9 @@
 import re
 
+from fastapi import HTTPException
 from sqlalchemy import Column, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship, validates
+from starlette import status
 
 from app.database.database import Base
 
@@ -35,8 +37,15 @@ class Users(Base):
         pattern = re.compile(
             r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+"
         )
-        assert re.fullmatch(pattern, value)
-        return value
+        try:
+            assert re.fullmatch(pattern, value)
+            return value
+        except AssertionError:
+            email_validation_exception = HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Invalid email",
+            )
+            raise email_validation_exception
 
 
 class RefferalCode(Base):

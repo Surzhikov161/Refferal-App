@@ -49,7 +49,7 @@ async def register(
         content={
             "result": False,
             "msg": (
-                "Error during registration. Invalid username or email or refferal_code."
+                "Error during registration. Invalid username or refferal_code."
             ),
         },
     )
@@ -76,10 +76,3 @@ async def login_for_access_token(
         data={"sub": user.username}, expires_delta=access_token_expires
     )
     return Token(access_token=access_token, token_type="bearer")
-
-
-@router.get("/me", response_model=ActiveUser)
-async def read_users_me(
-    current_user: Annotated[ActiveUser, Depends(get_current_active_user)]
-):
-    return current_user
