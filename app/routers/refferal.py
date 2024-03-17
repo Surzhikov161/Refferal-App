@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from starlette.responses import JSONResponse
 
 from app.dependencies import get_async_session
+from app.models.models import check_email
 from app.models.queries import (
     add_refferal_code_to_user,
     delete_ref_code,
@@ -19,7 +20,10 @@ from app.models.schemas import (
     ReturnRefCode,
     ReturnRefferals,
 )
-from app.utils import create_access_token, get_current_active_user
+from app.utils import (
+    create_access_token,
+    get_current_active_user,
+)
 
 router = APIRouter(
     prefix="/api/refferal",
@@ -141,6 +145,7 @@ async def get_ref_code_by_email(
         async_sessionmaker[AsyncSession], Depends(get_async_session)
     ],
 ):
+    email = check_email(email)
     refferal_code = await get_refferal_code(email, async_session)
     if refferal_code:
         return JSONResponse(

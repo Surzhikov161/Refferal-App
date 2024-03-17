@@ -25,7 +25,7 @@ def test_get_code_by_email(client):
 @pytest.mark.asyncio
 async def test_register(client, async_session):
     json = {
-        "username": "test",
+        "username": "testing",
         "email": "testemail@gmail.com",
         "password": "pass",
     }
@@ -38,6 +38,22 @@ async def test_register(client, async_session):
 
     fail_res = client.post("api/accounts/register", json=json)
     assert fail_res.status_code == 404
+
+    fail_json_2 = {
+        "username": "",
+        "email": "testemail2@gmail.com",
+        "password": "pass",
+    }
+    fail_res_2 = client.post("api/accounts/register", json=fail_json_2)
+    assert fail_res_2.status_code == 422
+
+    fail_json_3 = {
+        "username": "345612",
+        "email": "testemail2@gmail.com",
+        "password": "",
+    }
+    fail_res_3 = client.post("api/accounts/register", json=fail_json_3)
+    assert fail_res_3.status_code == 422
 
 
 @pytest.mark.asyncio

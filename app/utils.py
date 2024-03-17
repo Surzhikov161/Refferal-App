@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import re
 from typing import Annotated, Any, Optional
 
 from fastapi import Depends, HTTPException
@@ -86,7 +87,15 @@ async def get_current_active_user(
     return current_user
 
 
+password_validation_exception = HTTPException(
+    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+    detail="Password can't be empty",
+)
+
+
 def compile_user_data(user_data: dict[str, Any]):
+    if not user_data["password"]:
+        raise password_validation_exception
     password_hash = get_password_hash(user_data["password"])
     user_data["password"] = password_hash
     return user_data

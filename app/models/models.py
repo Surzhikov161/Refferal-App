@@ -8,6 +8,21 @@ from starlette import status
 from app.database.database import Base
 
 
+def check_email(email: str):
+    pattern = re.compile(
+        r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+"
+    )
+    try:
+        assert re.fullmatch(pattern, email)
+        return email
+    except AssertionError:
+        email_validation_exception = HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Invalid email",
+        )
+        raise email_validation_exception
+
+
 class Users(Base):
     __tablename__ = "users"
 
@@ -34,18 +49,19 @@ class Users(Base):
 
     @validates("email")
     def validate_email(self, key, value):
-        pattern = re.compile(
-            r"([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+"
-        )
+        return check_email(value)
+
+    @validates("username")
+    def validate_username(self, key, value):
         try:
-            assert re.fullmatch(pattern, value)
+            assert len(value) >= 5
             return value
         except AssertionError:
-            email_validation_exception = HTTPException(
+            username_validation_exception = HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail="Invalid email",
+                detail="username length must be 5 or above.",
             )
-            raise email_validation_exception
+            raise username_validation_exception
 
 
 class RefferalCode(Base):
