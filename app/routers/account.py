@@ -49,7 +49,7 @@ async def register(
         content={
             "result": False,
             "msg": (
-                "Error during registration. Invalid username or refferal_code."
+                "Error during registration. Nickname or email is already taken"
             ),
         },
     )

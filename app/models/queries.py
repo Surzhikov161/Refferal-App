@@ -1,6 +1,7 @@
 import time
 from typing import Any, Optional
 
+from fastapi import HTTPException
 from fastapi_cache import FastAPICache
 from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
@@ -9,9 +10,18 @@ from redis import asyncio as aioredis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from sqlalchemy.future import select
 from sqlalchemy.orm import noload
+from starlette import status
 
 from app.config import ALGORITHM, SECRET_KEY
 from app.models.models import RefferalCode, Users, refferals
+
+
+def raise_refferal_exception():
+    refferal_validation_exception = HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Invalid refferal_code",
+    )
+    raise refferal_validation_exception
 
 
 async def is_ref_valid(
@@ -22,10 +32,11 @@ async def is_ref_valid(
         payload = jwt.decode(ref_code, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("email", "")
         user = await get_user_by_email(email, async_session)
-        if user and user.refferal_code:
+        if user and user.refferal_code and user.refferal_code.code == ref_code:
             return user
+        raise_refferal_exception()
     except JWTError:
-        return
+        raise_refferal_exception()
 
 
 async def get_user_by_username(
